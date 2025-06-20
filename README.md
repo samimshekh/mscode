@@ -480,18 +480,18 @@ Namespace: `Logic\Http\Response`
 
 ### 🔍 Public Methods:
 
-| Method                                                                    | Description                                                  |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `setresponseCode(int $code)`                                              | HTTP response code set karta hai, jaise `404`, `200`         |
-| `header(string $name, string $value)`                                     | Custom header add karta hai                                  |
-| `setHtml(string $html, bool $flag = false)`                               | HTML response set karta hai                                  |
-| `setJson(array $data, bool $flag = false)`                                | JSON response set karta hai                                  |
-| `setXml(array $data, bool $flag = false, string $rootNode = 'response')`  | XML response generate karta hai                              |
-| `setXhtmlxml(array $data, bool $flag = false, string $rootNode = 'html')` | XHTML+XML content bhejne ke liye                             |
-| `setXhxml(array $data, bool $flag = false, string $rootNode = 'hxml')`    | Custom x-hxml format bhejne ke liye                          |
-| `cleneBody()`                                                             | Body reset karta hai (clear karta hai)                       |
-| `cleneHeader()`                                                           | Headers reset karta hai except `Content-Type` (agar set hai) |
-| `getBody()`                                                               | Current response body return karta hai (array format)        |
+| Method                                                                    | Description                                                        |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------|
+| `setresponseCode(int $code)`                                              | HTTP response code set karta hai, jaise `404`, `200`               |
+| `header(string $name, string $value)`                                     | Custom header add karta hai                                        |
+| `setHtml(string $html, bool $flag = false)`                               | HTML response set karta hai                                        |
+| `setJson(array $data, bool $flag = false)`                                | JSON response set karta hai                                        |
+| `setXml(array $data, bool $flag = false, string $rootNode = 'response')`  | XML response set karta hai $rootNode Custom node defaint karta hai |
+| `setXhtmlxml(array $data, bool $flag = false, string $rootNode = 'html')` | XHTML+XML content bhejne ke liye                                   |
+| `setXhxml(array $data, bool $flag = false, string $rootNode = 'hxml')`    | Custom x-hxml format bhejne ke liye                                |
+| `cleneBody()`                                                             | Body reset karta hai (clear karta hai)                             |
+| `cleneHeader()`                                                           | Headers reset karta hai except `Content-Type` (agar set hai)       |
+| `getBody()`                                                               | Current response body return karta hai (array format)              |
 
 ---
 
