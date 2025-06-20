@@ -1,5 +1,57 @@
 # mscode
 A lightweight yet advanced PHP web framework by Samim Shekh. Designed for speed, clean architecture, and modern routing. Perfect for building scalable and structured web applications.
+Perfect! Aapka **mscode framework setup process** kaafi simple aur clean hai. Neeche usi ko main `README.md` ke **Setup** section ke roop me likh raha hoon — Roman Hindi me, user-friendly tarike se:
+
+---
+
+## ⚙️ mscode Setup Guide
+
+Aap mscode ko niche diye gaye simple steps ke zariye easily setup kar sakte ho:
+
+---
+
+### 🧬 1. Project Clone karo
+
+```bash
+git clone https://github.com/samimshekh/mscode.git
+cd mscode
+composer dump-autoload
+````
+
+---
+
+### 🛢️ 2. Database Configuration (Agar project me table/migration use ho)
+
+1. `logic\Settings\Repository.php` file open karo
+2. Yahan apna database name set karo:
+
+```php
+public static $dbname = "ci4tutorial";
+```
+
+3. Ab apne MySQL me ek database banao isi naam se:
+
+```sql
+CREATE DATABASE ci4tutorial;
+```
+
+---
+
+### 🛠️ 3. Schema se sabhi tables banane ke liye CLI command run karo:
+
+```bash
+php mscode make:all
+```
+
+Yeh command `logic/schema/` ke sabhi class files read karke database me matching tables create kar dega.
+
+---
+
+✅ Ab aapka mscode project ready hai development ke liye.
+
+```
+
+---
 
 ## Routing System
 
@@ -165,6 +217,111 @@ Yani jo public properties kisi bhi previous layer me defined hoti hain, wo next 
 
 🔒 **Note:**
 Sirf `public` properties hi aage pass hoti hain. Agar aap kisi class me `protected` ya `private` variable likhoge to wo next layer me access nahi hoga.
+
+---
+
+Aapka `Route` system kaafi advanced aur flexible hai, jisme **HTTP method-specific routing** implement ki gayi hai — Laravel aur Symfony jaise frameworks ki tarah.
+
+Neeche main is poore `Route` method system ka **professional Roman Hindi** me explanation de raha hoon — `README.md` ke format me:
+
+---
+
+## 🌐 Route Method System (HTTP Method-wise Routing)
+
+mscode framework me har HTTP method ke liye dedicated static function diya gaya hai, jiska kaam sirf tabhi execute hota hai jab request ka HTTP method usi se match kare.
+
+Sabhi method ka common signature hai:
+
+```php
+final public static function method(string $url, string $Processors, ?string $Guard = null)
+````
+
+* `$url` — route path jaise `/user`, `/api/data`
+* `$Processors` — `"ClassName::method"` format me processor class
+* `$Guard` — (optional) `"ClassName::method"` format me guard class
+
+---
+
+### ✅ Individual HTTP Methods:
+
+| Method    | Function Name      | Description                        |
+| --------- | ------------------ | ---------------------------------- |
+| `GET`     | `Route::get()`     | Sirf GET request handle karta hai  |
+| `POST`    | `Route::post()`    | Sirf POST request handle karta hai |
+| `PUT`     | `Route::put()`     | Sirf PUT request ke liye           |
+| `DELETE`  | `Route::delete()`  | Sirf DELETE request ke liye        |
+| `PATCH`   | `Route::patch()`   | Sirf PATCH ke liye                 |
+| `OPTIONS` | `Route::options()` | OPTIONS request handle karta hai   |
+| `HEAD`    | `Route::head()`    | HEAD request ke liye               |
+| `CONNECT` | `Route::connect()` | CONNECT method ke liye             |
+| `TRACE`   | `Route::trace()`   | TRACE method ke liye               |
+
+---
+
+### 🧠 Internal Working:
+
+* Agar match karta hai to Hook → Group → Guard → Processor execution flow start karta hai
+
+---
+
+### 🔁 Route::match()
+
+```php
+Route::match(['GET', 'POST'], "/submit", "Form::handle");
+```
+
+* Isme aap multiple methods pass kar sakte ho
+* Agar current request ka method inme se kisi se match kare to route activate hota hai
+
+---
+
+### ♾️ Route::all()
+
+```php
+Route::all("/webhook", "Webhook::handler");
+```
+
+* Isme method check nahi hota
+* Har request method (`GET`, `POST`, etc.) par ye route kaam karta hai
+
+---
+
+### 🧪 Real-World Example:
+
+```php
+Route::get("/user", "User::index");
+Route::post("/user", "User::store");
+Route::put("/user/(int id=User::find)", "User::update");
+Route::delete("/user/(int id=User::find)", "User::delete");
+```
+
+* GET => `/user` → `User::index()`
+* POST => `/user` → `User::store()`
+* PUT => `/user/1` → `User::update()`
+* DELETE => `/user/1` → `User::delete()`
+
+---
+
+### 🛡️ Guard Support:
+
+Har method me optional third parameter `$Guard` hota hai:
+
+```php
+Route::post("/admin", "Admin::panel", "Auth::check");
+```
+
+* Guard check hoga pehle
+* Agar `return true` karta hai to hi processor chalega
+
+---
+
+### 📌 Summary:
+
+| Method           | Trigger Conditions                         |
+| ---------------- | ------------------------------------------ |
+| `Route::get()`   | Jab GET ho                                 |
+| `Route::match()` | Jab method allowed list me ho              |
+| `Route::all()`   | Hamesha chalega                            |
 
 ---
 
