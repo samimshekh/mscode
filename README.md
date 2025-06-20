@@ -544,13 +544,6 @@ $this->App->Response
 
 ---
 
-Bahut hi important point raise kiya aapne — mscode framework ke `App->Response` system ka **default behavior** API designing ke liye highly optimized hai, lekin usme kuch **strict rules** hain jo user ko **samajhna zaroori** hai.
-
-Main neeche aapki baat ko `README.md` ke style me, **Roman Hindi** me, bilkul user-point-of-view ke according likh raha hoon — taaki koi bhi developer framework use karte waqt confuse na ho:
-
----
-
-````markdown
 ## 📤 Response Handling Guidelines (User ke Point of View se)
 
 mscode framework me response system `App->Response` ke through control kiya jata hai. Iska use mostly **API development** me hota hai (HTML, JSON, XML, etc. bhejne ke liye).
