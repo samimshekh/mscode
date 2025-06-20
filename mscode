@@ -1,0 +1,434 @@
+#!/usr/bin/env php
+<?php
+$command = $argv[1] ?? null;
+$args    = array_slice($argv, 2);
+
+if (!$command) {
+    echo "Please provide a command like: php mscode --help\n";
+    exit(1);
+}
+
+$register = [
+    "--help" => [
+        'allHelpPrint',
+        "List all available commands"
+    ],
+    "print:table" => [
+        'printTable',
+        "Prints table structure. Arg: <tableName>"
+    ],
+    "make:table" => [
+        'makeTable',
+        "Creates table. Arg: <tableName>"
+    ],
+    "delete:table" => [
+        'deleteTable',
+        "Drops and deletes table class file. Arg: <tableName>"
+    ],
+    "make:all" => [
+        'makeAll',
+        "Creates all tables from schema directory"
+    ],
+    "delete:all" => [
+        'deleteAll',
+        "Drops and deletes all schema tables"
+    ],
+    "make:Process" => [
+        'makeProcess',
+        "Creates a Process class. Arg: <name>"
+    ],
+    "make:rep" => [
+        'makeRep',
+        "Creates a repository class in logic/Repository. Arg: <ClassName>"
+    ],
+    "make:schema" => [
+        'makeSchema',
+        "Creates a schema file. Arg: <name>"
+    ],
+    "make:hook" => [
+        'makeHook',
+        "Creates a hook class in logic/Hooks. Arg: <name>"
+    ],
+    "make:guard" => [
+        'makeGuard',
+        "Creates a guard class in logic/Guards. Arg: <name>"
+    ],
+];
+
+if (!isset($register[$command])) {
+    echo "Command '$command' not exist!\n";
+    exit(1);
+}
+if (!function_exists($register[$command][0])) {
+    echo "Function '{$register[$command][0]}' not found!\n";
+    exit(1);
+}
+
+$fun = new ReflectionFunction($register[$command][0]);
+if (
+    $fun->getNumberOfParameters() >= count($args)
+    && count($args) >= $fun->getNumberOfRequiredParameters()
+) {
+    $register[$command][0](...$args);
+} else {
+    echo "Invalid arguments for command '$command'\n";
+    allHelpPrint($command);
+}
+
+
+// ==============================
+// HELP FUNCTION
+// ==============================
+function allHelpPrint($command1 = null)
+{
+    global $register;
+    if ($command1 === NULL) {
+        echo "Available Commands:\n";
+        foreach ($register as $key => $value) {
+            echo "  $key: {$value[1]}\n";
+        }
+        echo "\n";
+    } else {
+        if (isset($register[$command1])) {
+            echo "📘 $command1:\n  {$register[$command1][1]}\n";
+        } else {
+            echo "Invalid command: $command1\n";
+        }
+    }
+}
+
+// ==============================
+// TABLE SCHEMA LOGIC
+// ==============================
+
+function loadSchemaClass(string $table)
+{
+    $path = __DIR__ . "/logic/schema/$table.php";
+    if (!file_exists($path)) {
+        throw new Exception("Table file not found: $table");
+    }
+    require_once $path;
+    $class = "Logic\\Schema\\$table";
+    if (!class_exists($class)) {
+        throw new Exception("Class not found: $class");
+    }
+    return new $class;
+}
+
+function mysqliInstance(): mysqli
+{
+    require_once 'logic\Settings\Repository.php';
+    return new mysqli(Settings\Repository::$host, Settings\Repository::$username, Settings\Repository::$password, Settings\Repository::$dbname);
+}
+
+// ==============================
+// print:table
+// ==============================
+function printTable(string $table)
+{
+    $schema = loadSchemaClass($table);
+    echo "Table: $table\n";
+    echo "Engine : {$schema->engine}\n";
+    echo "Charset: {$schema->charset}\n";
+    echo "Columns:\n";
+    foreach ($schema->columns as $col => $def) {
+        echo "  - $col $def\n";
+    }
+}
+
+// ==============================
+// make:table
+// ==============================
+function makeTable(string $table)
+{
+    $schema = loadSchemaClass($table);
+    $mysqli = mysqliInstance();
+
+    // Drop if exists
+    $mysqli->query("DROP TABLE IF EXISTS `$table`");
+
+    $cols = [];
+    foreach ($schema->columns as $col => $type) {
+        $cols[] = "`$col` $type";
+    }
+    $colSql = implode(", ", $cols);
+    $sql = "CREATE TABLE `$table` ($colSql) ENGINE={$schema->engine} DEFAULT CHARSET={$schema->charset}";
+
+    if ($mysqli->query($sql)) {
+        echo "Table '$table' created successfully.\n";
+    } else {
+        echo "Failed: " . $mysqli->error . "\n";
+    }
+}
+
+// ==============================
+// delete:table
+// ==============================
+function deleteTable(string $table)
+{
+    $mysqli = mysqliInstance();
+    if ($mysqli->query("DROP TABLE IF EXISTS `$table`")) {
+        echo "Table '$table' dropped.\n";
+    } else {
+        echo "Error: " . $mysqli->error . "\n";
+    }
+}
+
+// ==============================
+// make:All
+// ==============================
+function makeAll()
+{
+    $dir = __DIR__ . "/logic/schema";
+    $files = scandir($dir);
+
+    $mysqli = mysqliInstance();
+
+    foreach ($files as $file) {
+        if (pathinfo($file, PATHINFO_EXTENSION) !== 'php') continue;
+
+        $table = pathinfo($file, PATHINFO_FILENAME);
+        try {
+            $schema = loadSchemaClass($table);
+
+            $mysqli->query("DROP TABLE IF EXISTS `$table`");
+
+            $cols = [];
+            foreach ($schema->columns as $col => $type) {
+                $cols[] = "`$col` $type";
+            }
+            $colSql = implode(", ", $cols);
+            $sql = "CREATE TABLE `$table` ($colSql) ENGINE={$schema->engine} DEFAULT CHARSET={$schema->charset}";
+
+            if ($mysqli->query($sql)) {
+                echo "Table '$table' created.\n";
+            } else {
+                echo "Failed to create '$table': " . $mysqli->error . "\n";
+            }
+        } catch (Throwable $e) {
+            echo "Error with table '$table': " . $e->getMessage() . "\n";
+        }
+    }
+}
+
+// ==============================
+// delete:all
+// ==============================
+
+function deleteAll()
+{
+    $dir = __DIR__ . "/logic/schema";
+    $files = scandir($dir);
+
+    $mysqli = mysqliInstance();
+
+    foreach ($files as $file) {
+        if (pathinfo($file, PATHINFO_EXTENSION) !== 'php') continue;
+
+        $table = pathinfo($file, PATHINFO_FILENAME);
+        try {
+            // Drop table
+            if ($mysqli->query("DROP TABLE IF EXISTS `$table`")) {
+                echo "Table '$table' dropped.\n";
+            } else {
+                echo "Failed to drop '$table': " . $mysqli->error . "\n";
+            }
+        } catch (Throwable $e) {
+            echo "Error on '$table': " . $e->getMessage() . "\n";
+        }
+    }
+}
+// ==============================
+// make:Process
+// ==============================
+
+function makeProcess(string $name)
+{
+    $dir = __DIR__ . "/logic/Processors";
+    $file = "$dir/$name.php";
+
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+
+    if (file_exists($file)) {
+        echo "Process File already exists: $file\n";
+        return;
+    }
+
+    $classTemplate = <<<PHP
+<?php
+namespace Logic\\Processors;
+//$this->Guard->group->hooks->hookName->type;
+//$this->App;
+
+class $name 
+{
+    public function index()      
+    {
+        return false;
+    }
+}
+PHP;
+
+    file_put_contents($file, $classTemplate);
+    echo "Processor created: $file\n";
+}
+
+// ==============================
+// make:rep
+// ==============================
+
+function makeRep(string $name)
+{
+    $dir  = __DIR__ . "/logic/Repository";
+    $file = "$dir/$name.php";
+
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+
+    if (file_exists($file)) {
+        echo "File already exists: $file\n";
+        return;
+    }
+
+    $template = <<<PHP
+<?php
+namespace Rep;
+
+use Logic\\Repository\\DB;
+
+class $name 
+{
+    public static function getdata(string \$table)
+    {
+        \$sql    = "SELECT * FROM `\$table`";
+        \$result = DB::query(\$sql);
+
+        if (!\$result) {
+            throw new \\Exception("Query failed: " . DB::get_error());
+        }
+
+        return \$result->fetch_all(MYSQLI_ASSOC);
+    }
+}
+PHP;
+
+    file_put_contents($file, $template);
+    echo "Repository created: $file\n";
+}
+
+// ==============================
+// make:Schema
+// ==============================
+
+function makeSchema(string $name)
+{
+    $dir  = __DIR__ . "/logic/schema";
+    $file = "$dir/$name.php";
+
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+
+    if (file_exists($file)) {
+        echo "File already exists: $file\n";
+        return;
+    }
+
+    $classTemplate = <<<PHP
+<?php
+namespace Logic\\Schema;
+
+class $name {
+    public array \$columns = [
+        'id' => 'INT AUTO_INCREMENT PRIMARY KEY',
+        'created_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP',
+        'update_at' => 'DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'
+    ];
+
+    public string \$engine  = 'InnoDB';
+    public string \$charset = 'utf8mb4';
+}
+PHP;
+
+    file_put_contents($file, $classTemplate);
+    echo "Schema created: $file\n";
+}
+
+// ==============================
+// make:hook
+// ==============================
+
+function makeHook(string $name)
+{
+    $dir  = __DIR__ . "/logic/Hooks";
+    $file = "$dir/$name.php";
+
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+
+    if (file_exists($file)) {
+        echo "File already exists: $file\n";
+        return;
+    }
+
+    $classTemplate = <<<PHP
+<?php
+namespace Logic\\Hooks;
+
+// /(int id=userid::id) → this will resolve to variable named 'id' from 'userid::id' call
+
+class $name  
+{
+    public function id() : bool
+    {
+        \$this->id;
+        return true;
+    }   
+}
+PHP;
+
+    file_put_contents($file, $classTemplate);
+    echo "Hook created: $file\n";
+}
+
+// ==============================
+// make:guard
+// ==============================
+
+function makeGuard(string $name)
+{
+    $dir  = __DIR__ . "/logic/Guards";
+    $file = "$dir/$name.php";
+
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+
+    if (file_exists($file)) {
+        echo "File already exists: $file\n";
+        return;
+    }
+
+    $classTemplate = <<<PHP
+<?php
+namespace Logic\\Guards;
+
+// \$this->group->hooks->hookName->type → for group-specific hook resolution
+// \$this->hooks->hookName->type → for general hook access
+
+class $name 
+{
+    public function index() 
+    {
+        return true;
+    }
+}
+PHP;
+
+    file_put_contents($file, $classTemplate);
+    echo "Guard created: $file\n";
+}

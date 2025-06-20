@@ -1,0 +1,26 @@
+{
+    "name": "mscode/framework",
+    "description": "mscode  starter app",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "files": [
+            "coresys/display.php"
+        ],
+        "psr-4": {
+            "Rep\\": "logic\\Repository\\",
+            "Settings\\": "logic\\Settings\\",
+            "Logic\\": "coresys\\",
+            "lib\\": "logic\\libs\\"
+        }
+    },
+    "authors": [
+        {
+            "name": "samim shekh",
+            "email": "samim@example.com"
+        }
+    ],
+    "version": "1.0.0",
+    "minimum-stability": "dev",
+    "require": {}
+}
